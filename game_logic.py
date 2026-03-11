@@ -6,27 +6,44 @@ def normalize_answer(answer):
     return answer.strip().lower()
 
 
+def _best_ratio(guess, correct, alternatives):
+    """Return the best similarity ratio across correct answer and alternatives."""
+    best = difflib.SequenceMatcher(None, guess, correct).ratio()
+    for alt in (alternatives or []):
+        r = difflib.SequenceMatcher(None, guess, normalize_answer(alt)).ratio()
+        if r > best:
+            best = r
+    return best
+
+
 def check_answer(guess, correct_answer, alternatives=None):
-    """Check if the guess matches the correct answer (lenient for kids)."""
+    """Check answer with typo tolerance.
+
+    Returns:
+        "exact"  – perfect match
+        "typo"   – 70%+ letters correct (accepted with spelling note)
+        False    – wrong answer
+    """
     if not guess:
         return False
     normalized_guess = normalize_answer(guess)
     normalized_correct = normalize_answer(correct_answer)
 
+    # Exact match
     if normalized_guess == normalized_correct:
-        return True
-
+        return "exact"
     if alternatives:
         for alt in alternatives:
             if normalized_guess == normalize_answer(alt):
-                return True
+                return "exact"
 
-    # Allow close matches for typos (85%+ similarity, at least 3 chars typed)
-    ratio = difflib.SequenceMatcher(
-        None, normalized_guess, normalized_correct
-    ).ratio()
-    if ratio >= 0.85 and len(normalized_guess) >= 3:
-        return True
+    if len(normalized_guess) < 2:
+        return False
+
+    ratio = _best_ratio(normalized_guess, normalized_correct, alternatives)
+
+    if ratio >= 0.70:
+        return "typo"
 
     return False
 

@@ -3,13 +3,35 @@ import streamlit as st
 import streamlit.components.v1 as components
 
 
-# ISO 2-letter → ISO numeric code mapping for our 25 countries
+# ISO 2-letter → ISO numeric code mapping
 _ISO_NUM = {
     "fr": "250", "jp": "392", "br": "076", "eg": "818", "au": "036",
     "in": "356", "gb": "826", "it": "380", "mx": "484", "kr": "410",
     "ca": "124", "de": "276", "cn": "156", "ar": "032", "ke": "404",
     "es": "724", "tr": "792", "th": "764", "za": "710", "pe": "604",
     "gr": "300", "ru": "643", "no": "578", "ma": "504", "nz": "554",
+    # Europe
+    "pt": "620", "nl": "528", "se": "752", "dk": "208", "fi": "246",
+    "pl": "616", "be": "056", "at": "040", "ch": "756", "cz": "203",
+    "hu": "348", "ie": "372", "is": "352", "ro": "642", "ua": "804",
+    "hr": "191", "rs": "688", "bg": "100", "al": "008", "lv": "428",
+    # Asia
+    "vn": "704", "id": "360", "ph": "608", "my": "458", "sg": "702",
+    "kh": "116", "pk": "586", "bd": "050", "np": "524", "mn": "496",
+    "ir": "364", "iq": "368", "sa": "682", "ae": "784", "il": "376",
+    "jo": "400", "lb": "422", "af": "004", "mm": "104", "la": "418",
+    # Africa
+    "ng": "566", "et": "231", "gh": "288", "tz": "834", "ug": "800",
+    "sn": "686", "ci": "384", "dz": "012", "tn": "788", "ly": "434",
+    "sd": "736", "mg": "450", "zw": "716", "rw": "646", "cd": "180",
+    "cm": "120", "mz": "508",
+    # Americas
+    "us": "840", "co": "170", "cl": "152", "ve": "862", "ec": "218",
+    "bo": "068", "py": "600", "uy": "858", "cu": "192", "cr": "188",
+    "pa": "591", "jm": "388", "do": "214", "gt": "320", "hn": "340",
+    "ni": "558",
+    # Oceania
+    "fj": "242", "pg": "598",
 }
 _TOPO_URL = "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json"
 
@@ -17,31 +39,111 @@ FLAG_CDN = "https://flagcdn.com/w320"
 
 # Wikimedia Commons landmark photo URLs  (400px thumbnails — allowed by Wikimedia)
 _LANDMARK_IMG = {
+    # ── Europe ──
     "fr": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/85/Tour_Eiffel_Wikimedia_Commons_%28cropped%29.jpg/400px-Tour_Eiffel_Wikimedia_Commons_%28cropped%29.jpg",
-    "jp": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f8/View_of_Mount_Fuji_from_%C5%8Cwakudani_20211202.jpg/400px-View_of_Mount_Fuji_from_%C5%8Cwakudani_20211202.jpg",
-    "br": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4f/Christ_the_Redeemer_-_Cristo_Redentor.jpg/400px-Christ_the_Redeemer_-_Cristo_Redentor.jpg",
-    "eg": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e7/Great_Pyramid_of_Giza_-_Pyramid_of_Khufu.jpg/400px-Great_Pyramid_of_Giza_-_Pyramid_of_Khufu.jpg",
-    "au": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a0/Sydney_Australia._%2821339175489%29.jpg/400px-Sydney_Australia._%2821339175489%29.jpg",
-    "in": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1d/Taj_Mahal_%28Edited%29.jpeg/400px-Taj_Mahal_%28Edited%29.jpeg",
     "gb": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/43/Elizabeth_Tower%2C_June_2022.jpg/400px-Elizabeth_Tower%2C_June_2022.jpg",
     "it": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/de/Colosseo_2020.jpg/400px-Colosseo_2020.jpg",
-    "mx": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/51/Chichen_Itza_3.jpg/400px-Chichen_Itza_3.jpg",
-    "kr": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/63/%EA%B4%91%ED%99%94%EB%AC%B8_%EC%9B%94%EB%8C%80.jpg/400px-%EA%B4%91%ED%99%94%EB%AC%B8_%EC%9B%94%EB%8C%80.jpg",
-    "ca": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/96/Toronto_-_ON_-_CN_Tower_bei_Nacht2.jpg/400px-Toronto_-_ON_-_CN_Tower_bei_Nacht2.jpg",
     "de": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a6/Brandenburger_Tor_abends.jpg/400px-Brandenburger_Tor_abends.jpg",
-    "cn": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/23/The_Great_Wall_of_China_at_Jinshanling-edit.jpg/400px-The_Great_Wall_of_China_at_Jinshanling-edit.jpg",
-    "ar": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/fc/Buenos_Aires_%2820234294752%29.jpg/400px-Buenos_Aires_%2820234294752%29.jpg",
-    "ke": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/17/Masai_Mara_at_Sunset.jpg/400px-Masai_Mara_at_Sunset.jpg",
     "es": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/26/%CE%A3%CE%B1%CE%B3%CF%81%CE%AC%CE%B4%CE%B1_%CE%A6%CE%B1%CE%BC%CE%AF%CE%BB%CE%B9%CE%B1_2941.jpg/400px-%CE%A3%CE%B1%CE%B3%CF%81%CE%AC%CE%B4%CE%B1_%CE%A6%CE%B1%CE%BC%CE%AF%CE%BB%CE%B9%CE%B1_2941.jpg",
-    "tr": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4a/Hagia_Sophia_%28228968325%29.jpeg/400px-Hagia_Sophia_%28228968325%29.jpeg",
-    "th": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c7/0005574_-_Wat_Phra_Kaew_006.jpg/400px-0005574_-_Wat_Phra_Kaew_006.jpg",
-    "za": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dc/Table_Mountain_DanieVDM.jpg/400px-Table_Mountain_DanieVDM.jpg",
-    "pe": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/bb/Machu_Picchu%2C_2023_%28012%29.jpg/400px-Machu_Picchu%2C_2023_%28012%29.jpg",
     "gr": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/da/The_Parthenon_in_Athens.jpg/400px-The_Parthenon_in_Athens.jpg",
     "ru": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/46/Moscow_Kremlin_%288281675670%29.jpg/400px-Moscow_Kremlin_%288281675670%29.jpg",
     "no": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d6/Moragsoorm.jpg/400px-Moragsoorm.jpg",
-    "ma": "https://upload.wikimedia.org/wikipedia/en/thumb/c/ce/Hassan_II_mosque%2C_Casablanca_2.jpg/400px-Hassan_II_mosque%2C_Casablanca_2.jpg",
+    "tr": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4a/Hagia_Sophia_%28228968325%29.jpeg/400px-Hagia_Sophia_%28228968325%29.jpeg",
+    "pt": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/65/Torre_Bel%C3%A9m_April_2009-4a.jpg/400px-Torre_Bel%C3%A9m_April_2009-4a.jpg",
+    "nl": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d3/Water_reflection_of_canal_houses_at_blue_hour_in_Damrak_Amsterdam_the_Netherlands.jpg/400px-Water_reflection_of_canal_houses_at_blue_hour_in_Damrak_Amsterdam_the_Netherlands.jpg",
+    "se": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f2/Storkyrkan_and_Kungliga_slottet_Stockholm_2016_01.jpg/400px-Storkyrkan_and_Kungliga_slottet_Stockholm_2016_01.jpg",
+    "dk": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/ce/Kopenhagen_%28DK%29%2C_Nyhavn_--_2017_--_1711.jpg/400px-Kopenhagen_%28DK%29%2C_Nyhavn_--_2017_--_1711.jpg",
+    "fi": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/27/Lutheran_Cathedral_Helsinki.jpg/400px-Lutheran_Cathedral_Helsinki.jpg",
+    "pl": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/bb/Piwna_Street_in_Warsaw_-_christmas_lights.jpg/400px-Piwna_Street_in_Warsaw_-_christmas_lights.jpg",
+    "be": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/33/Atomium%2C_Bruselas%2C_B%C3%A9lgica%2C_2021-12-15%2C_DD_148-150_HDR.jpg/400px-Atomium%2C_Bruselas%2C_B%C3%A9lgica%2C_2021-12-15%2C_DD_148-150_HDR.jpg",
+    "at": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1b/Palacio_de_Sch%C3%B6nbrunn%2C_Viena%2C_Austria%2C_2020-02-02%2C_DD_10.jpg/400px-Palacio_de_Sch%C3%B6nbrunn%2C_Viena%2C_Austria%2C_2020-02-02%2C_DD_10.jpg",
+    "ch": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/87/The_Zytglogge_clock_tower.jpg/400px-The_Zytglogge_clock_tower.jpg",
+    "cz": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e3/Charles_Bridge%2C_Prague.jpg/400px-Charles_Bridge%2C_Prague.jpg",
+    "hu": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/87/Budapest_Parliament_4604.JPG/400px-Budapest_Parliament_4604.JPG",
+    "ie": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4b/Long_Room_Interior%2C_Trinity_College_Dublin%2C_Ireland_-_Diliff.jpg/400px-Long_Room_Interior%2C_Trinity_College_Dublin%2C_Ireland_-_Diliff.jpg",
+    "is": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/da/Hallgr%C3%ADmskirkja.jpeg/400px-Hallgr%C3%ADmskirkja.jpeg",
+    "ro": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/86/North_Atlantic_Council_Summit_Meeting_%282008%29.jpg/400px-North_Atlantic_Council_Summit_Meeting_%282008%29.jpg",
+    "ua": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a9/80-391-9014_Kyiv_Sofia_2_RB_24.jpg/400px-80-391-9014_Kyiv_Sofia_2_RB_24.jpg",
+    "hr": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/86/Zagreb_cathedral_portal.jpg/400px-Zagreb_cathedral_portal.jpg",
+    "rs": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6f/Kalemegdan%2C_a04.jpg/400px-Kalemegdan%2C_a04.jpg",
+    "bg": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ad/AlexanderNevskyCathedral-Sofia-6.jpg/400px-AlexanderNevskyCathedral-Sofia-6.jpg",
+    "al": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/03/Tirana_-_Skanderbeg_Square_%28Sheshi_Sk%C3%ABnderbej%29_-_by_Pudelek.jpg/400px-Tirana_-_Skanderbeg_Square_%28Sheshi_Sk%C3%ABnderbej%29_-_by_Pudelek.jpg",
+    "lv": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/52/Old_Riga_Vecr%C4%ABga_Town_Hall.jpg/400px-Old_Riga_Vecr%C4%ABga_Town_Hall.jpg",
+    # ── Asia ──
+    "jp": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f8/View_of_Mount_Fuji_from_%C5%8Cwakudani_20211202.jpg/400px-View_of_Mount_Fuji_from_%C5%8Cwakudani_20211202.jpg",
+    "kr": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/63/%EA%B4%91%ED%99%94%EB%AC%B8_%EC%9B%94%EB%8C%80.jpg/400px-%EA%B4%91%ED%99%94%EB%AC%B8_%EC%9B%94%EB%8C%80.jpg",
+    "cn": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/23/The_Great_Wall_of_China_at_Jinshanling-edit.jpg/400px-The_Great_Wall_of_China_at_Jinshanling-edit.jpg",
+    "in": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1d/Taj_Mahal_%28Edited%29.jpeg/400px-Taj_Mahal_%28Edited%29.jpeg",
+    "th": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c7/0005574_-_Wat_Phra_Kaew_006.jpg/400px-0005574_-_Wat_Phra_Kaew_006.jpg",
+    "vn": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2d/Halong_Bay_in_Vietnam.jpg/400px-Halong_Bay_in_Vietnam.jpg",
+    "id": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8c/Borobudur-Nothwest-view.jpg/400px-Borobudur-Nothwest-view.jpg",
+    "ph": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/08/Museo_de_la_iglesia_de_San_Agust%C3%ADn%2C_Manila%2C_Filipinas%2C_2023-08-27%2C_DD_91-93_HDR.jpg/400px-Museo_de_la_iglesia_de_San_Agust%C3%ADn%2C_Manila%2C_Filipinas%2C_2023-08-27%2C_DD_91-93_HDR.jpg",
+    "my": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/44/Petronas_Towers_at_Night_-_from_the_base_upwards.jpg/400px-Petronas_Towers_at_Night_-_from_the_base_upwards.jpg",
+    "sg": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f3/ArtScience_Museum%2C_Marina_Bay_Sands%2C_Singapore.jpg/400px-ArtScience_Museum%2C_Marina_Bay_Sands%2C_Singapore.jpg",
+    "kh": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/25/Angkor_Wat_with_its_reflection_%28cropped%29.jpg/400px-Angkor_Wat_with_its_reflection_%28cropped%29.jpg",
+    "pk": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/bd/Ali_Mujtaba_WLM2015_FAISAL_MOSQUE_m_10.jpg/400px-Ali_Mujtaba_WLM2015_FAISAL_MOSQUE_m_10.jpg",
+    "bd": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/16/Ahsan_Manzil-Front_View.jpg/400px-Ahsan_Manzil-Front_View.jpg",
+    "np": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e7/Everest_North_Face_toward_Base_Camp_Tibet_Luca_Galuzzi_2006.jpg/400px-Everest_North_Face_toward_Base_Camp_Tibet_Luca_Galuzzi_2006.jpg",
+    "mn": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2b/Genghis_Khan_Equestrian_Statue_2011.jpg/400px-Genghis_Khan_Equestrian_Statue_2011.jpg",
+    "ir": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/ce/Palacio_de_Golest%C3%A1n%2C_Teher%C3%A1n%2C_Ir%C3%A1n%2C_2016-09-17%2C_DD_24-26_HDR.jpg/400px-Palacio_de_Golest%C3%A1n%2C_Teher%C3%A1n%2C_Ir%C3%A1n%2C_2016-09-17%2C_DD_24-26_HDR.jpg",
+    "iq": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b5/Al-Mutanabbi_Street_Gate.png/400px-Al-Mutanabbi_Street_Gate.png",
+    "sa": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ad/Al_Masmak_Fortress%2C_Riyadh_%282998425369%29.jpg/400px-Al_Masmak_Fortress%2C_Riyadh_%282998425369%29.jpg",
+    "ae": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a7/SZGM%2C_Abu_Dhabi_%28IMG_20230812_132052%29.jpg/400px-SZGM%2C_Abu_Dhabi_%28IMG_20230812_132052%29.jpg",
+    "il": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/05/Western-wall-plaza.jpg/400px-Western-wall-plaza.jpg",
+    "jo": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4e/The_Treasury%2C_Petra%2C_Jordan1.jpg/400px-The_Treasury%2C_Petra%2C_Jordan1.jpg",
+    "lb": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e8/Pano_Baalbek_1.jpg/400px-Pano_Baalbek_1.jpg",
+    "af": "https://upload.wikimedia.org/wikipedia/commons/e/ee/Babur_Gardens_in_May_2010.jpg",
+    "mm": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f0/Shwedagon_Pagoda.jpg/400px-Shwedagon_Pagoda.jpg",
+    "la": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d1/Pha_That_Luang%2C_Vientiane%2C_Laos.jpg/400px-Pha_That_Luang%2C_Vientiane%2C_Laos.jpg",
+    # ── Africa ──
+    "eg": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e7/Great_Pyramid_of_Giza_-_Pyramid_of_Khufu.jpg/400px-Great_Pyramid_of_Giza_-_Pyramid_of_Khufu.jpg",
+    "ke": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/17/Masai_Mara_at_Sunset.jpg/400px-Masai_Mara_at_Sunset.jpg",
+    "za": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dc/Table_Mountain_DanieVDM.jpg/400px-Table_Mountain_DanieVDM.jpg",
+    "ma": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8a/Sunshine_on_mosque_Hassan_II_in_Casablanca%2C_Morocco_-_Flickr_-_Milamber%27s_portfolio.jpg/400px-Sunshine_on_mosque_Hassan_II_in_Casablanca%2C_Morocco_-_Flickr_-_Milamber%27s_portfolio.jpg",
+    "ng": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/cb/Zuma_Rock.jpg/400px-Zuma_Rock.jpg",
+    "et": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0b/Bete_Giyorgis_03.jpg/400px-Bete_Giyorgis_03.jpg",
+    "gh": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/cf/Castle%2C_Cape_Coast_%28P1100221%29.jpg/400px-Castle%2C_Cape_Coast_%28P1100221%29.jpg",
+    "tz": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6c/Kilimanjaro_from_Amboseli.jpg/400px-Kilimanjaro_from_Amboseli.jpg",
+    "ug": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/17/Bahai_temple%2C_Kampala_Uganda_%284295586141%29.jpg/400px-Bahai_temple%2C_Kampala_Uganda_%284295586141%29.jpg",
+    "sn": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e2/African_Renaissance_Monument_Dakar_2025.jpg/400px-African_Renaissance_Monument_Dakar_2025.jpg",
+    "ci": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/30/Notre-Dame-de-la-Paix_de_Yamoussoukro_2.jpg/400px-Notre-Dame-de-la-Paix_de_Yamoussoukro_2.jpg",
+    "dz": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/67/Ketchaoua_Mosque_Algiers_Ke%C3%A7iova_Camisi_Cezayir-02.jpg/400px-Ketchaoua_Mosque_Algiers_Ke%C3%A7iova_Camisi_Cezayir-02.jpg",
+    "tn": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a0/01996_01434_Ruins_of_Antonine_Baths_at_Carthage.jpg/400px-01996_01434_Ruins_of_Antonine_Baths_at_Carthage.jpg",
+    "ly": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/fa/Leptis_Magna_-_Labdah%2C_Libya_November_2004_%286769451979%29.jpg/400px-Leptis_Magna_-_Labdah%2C_Libya_November_2004_%286769451979%29.jpg",
+    "sd": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/36/Confluence_of_Nile_%28Khartoum%29_001_%28cropped%29.jpg/400px-Confluence_of_Nile_%28Khartoum%29_001_%28cropped%29.jpg",
+    "mg": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a8/Adansonia_grandidieri04.jpg/400px-Adansonia_grandidieri04.jpg",
+    "zw": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/81/Cataratas_Victoria%2C_Zambia-Zimbabue%2C_2018-07-27%2C_DD_30-34_PAN.jpg/400px-Cataratas_Victoria%2C_Zambia-Zimbabue%2C_2018-07-27%2C_DD_30-34_PAN.jpg",
+    "rw": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/81/Kigali_Convention_Center_outside_parking_and_compound.jpg/400px-Kigali_Convention_Center_outside_parking_and_compound.jpg",
+    "cd": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/54/Congo_River_from_Kinshasa_in_Democratic_Republic_of_the_Congo_%28DRC%29.jpg/400px-Congo_River_from_Kinshasa_in_Democratic_Republic_of_the_Congo_%28DRC%29.jpg",
+    "cm": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f0/Mount_Cameroon_from_Tiko.jpg/400px-Mount_Cameroon_from_Tiko.jpg",
+    "mz": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/fc/Map_of_the_Fortress_of_Mozambique_with_New_Works_Projected_for_Better_Defense_WDL955.png/400px-Map_of_the_Fortress_of_Mozambique_with_New_Works_Projected_for_Better_Defense_WDL955.png",
+    # ── Americas ──
+    "br": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4f/Christ_the_Redeemer_-_Cristo_Redentor.jpg/400px-Christ_the_Redeemer_-_Cristo_Redentor.jpg",
+    "mx": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/51/Chichen_Itza_3.jpg/400px-Chichen_Itza_3.jpg",
+    "ca": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/96/Toronto_-_ON_-_CN_Tower_bei_Nacht2.jpg/400px-Toronto_-_ON_-_CN_Tower_bei_Nacht2.jpg",
+    "ar": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/fc/Buenos_Aires_%2820234294752%29.jpg/400px-Buenos_Aires_%2820234294752%29.jpg",
+    "pe": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/bb/Machu_Picchu%2C_2023_%28012%29.jpg/400px-Machu_Picchu%2C_2023_%28012%29.jpg",
+    "us": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5a/US_Capitol_dome_Jan_2006.jpg/400px-US_Capitol_dome_Jan_2006.jpg",
+    "co": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5b/Bogot%C3%A1%2C_Monserrate%2C_2023-06_CN-02.jpg/400px-Bogot%C3%A1%2C_Monserrate%2C_2023-06_CN-02.jpg",
+    "cl": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/Moai_Rano_raraku.jpg/400px-Moai_Rano_raraku.jpg",
+    "ve": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/19/Salto_Angel_Dry_Season.jpg/400px-Salto_Angel_Dry_Season.jpg",
+    "ec": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/ef/Mitad_del_Mundo%2C_Quito%2C_Ecuador%2C_2015-07-22%2C_DD_06.JPG/400px-Mitad_del_Mundo%2C_Quito%2C_Ecuador%2C_2015-07-22%2C_DD_06.JPG",
+    "bo": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Piles_of_Salt_Salar_de_Uyuni_Bolivia_Luca_Galuzzi_2006_a.jpg/400px-Piles_of_Salt_Salar_de_Uyuni_Bolivia_Luca_Galuzzi_2006_a.jpg",
+    "py": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/ee/ASUNCION_PANTEON_NACIONAL_DE_LOS_H%C3%89ROES.jpg/400px-ASUNCION_PANTEON_NACIONAL_DE_LOS_H%C3%89ROES.jpg",
+    "uy": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d7/Plaza_Independencia%2C_Montevideo.jpg/400px-Plaza_Independencia%2C_Montevideo.jpg",
+    "cu": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/73/09423_-_Havanna_Capitol_E_facade.jpg/400px-09423_-_Havanna_Capitol_E_facade.jpg",
+    "cr": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/69/Arenal_volcano_%2870785p%29.jpg/400px-Arenal_volcano_%2870785p%29.jpg",
+    "pa": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/be/Miraflores_Locks_Panama_1914.JPG/400px-Miraflores_Locks_Panama_1914.JPG",
+    "jm": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/bb/Blue_Mountains%2C_Jamaica.jpg/400px-Blue_Mountains%2C_Jamaica.jpg",
+    "do": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8f/Santo_Domingo_-_Alcazar_de_Colon_02.JPG/400px-Santo_Domingo_-_Alcazar_de_Colon_02.JPG",
+    "gt": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/ce/Tikal_Temple_II.jpg/400px-Tikal_Temple_II.jpg",
+    "hn": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b5/Cop%C3%A1n_archaeological_site%2C_Honduras_21.jpg/400px-Cop%C3%A1n_archaeological_site%2C_Honduras_21.jpg",
+    "ni": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/24/View_of_Lake_Xolotlan_and_Momotombo_Volcano_-_En_Route_to_Leon_-_Nicaragua_%2830748896873%29.jpg/400px-View_of_Lake_Xolotlan_and_Momotombo_Volcano_-_En_Route_to_Leon_-_Nicaragua_%2830748896873%29.jpg",
+    # ── Oceania ──
+    "au": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a0/Sydney_Australia._%2821339175489%29.jpg/400px-Sydney_Australia._%2821339175489%29.jpg",
     "nz": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b6/Milford_Sound_%28New_Zealand%29.JPG/400px-Milford_Sound_%28New_Zealand%29.JPG",
+    "fj": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/eb/Tropical_Blooms_%28105663159%29.jpeg/400px-Tropical_Blooms_%28105663159%29.jpeg",
+    "pg": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f3/Papua_New_Guinea_1991-039_Parliament_House%2C_Port_Moresby_%2833351725760%29.jpg/400px-Papua_New_Guinea_1991-039_Parliament_House%2C_Port_Moresby_%2833351725760%29.jpg",
 }
 
 # Continent-based color themes  (primary, mid, dark)
@@ -166,13 +268,25 @@ def inject_custom_css():
     .stSlider > div { padding: 0 8px; }
     .stSelectbox > div > div { border-radius: 14px !important; }
 
+    /* ── shake animation ── */
+    @keyframes shake {
+        0%, 100% { transform: translateX(0); }
+        25% { transform: translateX(-5px); }
+        75% { transform: translateX(5px); }
+    }
+
     /* ── scrollbar ── */
     ::-webkit-scrollbar { width: 6px; }
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 3px; }
 
-    /* ── hide branding ── */
-    #MainMenu, footer, header { visibility: hidden; }
+    /* ── hide branding & kill top padding ── */
+    #MainMenu, footer, header { visibility: hidden; height: 0 !important; min-height: 0 !important; }
+    [data-testid="stHeader"] { height: 0 !important; min-height: 0 !important; }
+    .block-container { padding-top: 1rem !important; }
+    [data-testid="stAppViewContainer"] > div:first-child { padding-top: 0 !important; }
+    [data-testid="stMainBlockContainer"] { padding-top: 1rem !important; }
+    [data-testid="stSidebar"] > div:first-child { padding-top: 1rem !important; }
 
     /* tighten gap between card and map expander */
     [data-testid="stExpander"] { margin-top: -16px !important; }
@@ -256,7 +370,7 @@ html,body{{background:transparent;font-family:'Rubik','Segoe UI',sans-serif;dire
   background:linear-gradient(transparent,{c2})}}
 
 /* flag */
-.flag-wrap{{margin:-28px auto 0;position:relative;z-index:2;text-align:center}}
+.flag-wrap{{margin:{'-28px' if photo_src else '10px'} auto 0;position:relative;z-index:2;text-align:center}}
 .flag{{width:76px;border-radius:10px;display:block;margin:0 auto;
   box-shadow:0 6px 20px rgba(0,0,0,.3);border:3px solid rgba(255,255,255,.45);
   animation:glow 3.5s ease-in-out infinite}}
@@ -309,7 +423,8 @@ html,body{{background:transparent;font-family:'Rubik','Segoe UI',sans-serif;dire
   </div>
 </div>
 </body></html>"""
-    components.html(html, height=500, scrolling=False)
+    card_height = 500 if photo_src else 370
+    components.html(html, height=card_height, scrolling=False)
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -362,8 +477,8 @@ __MRK__
 
 def render_country_map(country):
     code = country.get("country_code", "")
-    html = _leaflet_html(code, country["country_lat"], country["country_lng"], height=340)
-    components.html(html, height=350)
+    html = _leaflet_html(code, country["country_lat"], country["country_lng"], height=260)
+    components.html(html, height=270)
 
 
 def render_maps(country):
@@ -544,7 +659,10 @@ def render_hint_box(hint_text, extra_hint=None):
 # ═══════════════════════════════════════════════════════════════════════════════
 
 def render_celebration(country, stats=None):
-    st.balloons()
+    ss = st.session_state
+    typo_note = getattr(ss, "typo_note", False)
+    if not typo_note:
+        st.balloons()
     capital_display = country.get("capital_he", country["capital"])
     streak_html = ""
     if stats:
@@ -558,30 +676,39 @@ def render_celebration(country, stats=None):
             f'box-shadow:0 2px 8px rgba(0,0,0,.06)">🔥 רצף: {stats["current_streak"]}</span>'
             f'</div>'
         )
+    typo_html = ""
+    if typo_note:
+        typo_html = (
+            f'<div style="margin-top:14px;background:rgba(245,158,11,.12);'
+            f'border:2px solid #f59e0b;border-radius:14px;padding:8px 18px;'
+            f'font-size:15px;font-weight:700;color:#92400e">'
+            f'📝 קיבלנו את זה! אבל שימו לב לאיות הנכון: <span style="color:#15803d;'
+            f'font-size:18px">{capital_display}</span></div>'
+        )
+    title = "!כמעט מושלם 👏" if typo_note else "!נכון מצוין"
+    emoji = "👍" if typo_note else "🎉"
+    extra_html = typo_html + streak_html
     st.markdown(
-        f"""<div style="background:linear-gradient(145deg,#dcfce7,#bbf7d0,#86efac);
-            border:3px solid #22c55e;border-radius:24px;padding:32px 24px;
-            text-align:center;min-height:260px;display:flex;flex-direction:column;
-            align-items:center;justify-content:center;
-            box-shadow:0 12px 40px rgba(34,197,94,.15);
-            position:relative;overflow:hidden">
-            <div style="position:absolute;top:0;left:0;right:0;height:4px;
-                background:linear-gradient(90deg,#22c55e,#86efac,#22c55e)"></div>
-            <div style="font-size:52px;margin-bottom:8px">🎉</div>
-            <div style="font-size:28px;font-weight:900;color:#15803d;margin-bottom:6px">
-                !נכון מצוין</div>
-            <div style="font-size:34px;font-weight:900;color:#166534;
-                text-shadow:0 1px 3px rgba(0,0,0,.05)">{capital_display}</div>
-            {streak_html}
-        </div>""", unsafe_allow_html=True)
+        f'<div style="background:linear-gradient(145deg,#dcfce7,#bbf7d0,#86efac);'
+        f'border:3px solid #22c55e;border-radius:24px;padding:32px 24px;'
+        f'text-align:center;min-height:260px;display:flex;flex-direction:column;'
+        f'align-items:center;justify-content:center;'
+        f'box-shadow:0 12px 40px rgba(34,197,94,.15);'
+        f'position:relative;overflow:hidden">'
+        f'<div style="position:absolute;top:0;left:0;right:0;height:4px;'
+        f'background:linear-gradient(90deg,#22c55e,#86efac,#22c55e)"></div>'
+        f'<div style="font-size:52px;margin-bottom:8px">{emoji}</div>'
+        f'<div style="font-size:28px;font-weight:900;color:#15803d;margin-bottom:6px">'
+        f'{title}</div>'
+        f'<div style="font-size:34px;font-weight:900;color:#166534;'
+        f'text-shadow:0 1px 3px rgba(0,0,0,.05)">{capital_display}</div>'
+        f'{extra_html}</div>', unsafe_allow_html=True)
 
 
 def render_wrong_card(attempts):
     msg = "לא בדיוק — נסו שוב! 💪" if attempts < 3 else "כמעט שם, המשיכו! 🌟"
     st.markdown(
-        f"""<style>@keyframes shake{{0%,100%{{transform:translateX(0)}}
-        25%{{transform:translateX(-5px)}}75%{{transform:translateX(5px)}}}}</style>
-        <div style="background:linear-gradient(145deg,#fef2f2,#fecaca,#fca5a5);
+        f"""<div style="background:linear-gradient(145deg,#fef2f2,#fecaca,#fca5a5);
             border:3px solid #ef4444;border-radius:24px;padding:26px 22px;
             text-align:center;min-height:150px;display:flex;flex-direction:column;
             align-items:center;justify-content:center;

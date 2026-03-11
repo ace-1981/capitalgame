@@ -94,3 +94,90 @@ def get_leaderboard(multi_stats, mode="most_correct"):
     else:
         players.sort(key=lambda p: p["correct"], reverse=True)
     return players
+
+
+# ── Competition history ──────────────────────────────────────────────────────
+
+def save_competition(players_stats, mode, mode_label, winner_name, filepath="competitions.json"):
+    """Save a completed competition to history."""
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    full_path = os.path.join(base_dir, filepath)
+
+    history = load_competitions(filepath)
+
+    competition = {
+        "id": len(history) + 1,
+        "date": datetime.now().isoformat(),
+        "mode": mode,
+        "mode_label": mode_label,
+        "winner": winner_name,
+        "players": [],
+    }
+    for name, stats in players_stats.items():
+        competition["players"].append({
+            "name": name,
+            "correct": stats.get("correct", 0),
+            "total_questions": stats.get("total_questions", 0),
+            "wrong_guesses": stats.get("wrong_guesses", 0),
+            "give_ups": stats.get("give_ups", 0),
+            "stars": stats.get("stars", 0),
+            "best_streak": stats.get("best_streak", 0),
+            "success_rate": stats.get("success_rate", 0.0),
+        })
+
+    history.append(competition)
+
+    with open(full_path, "w", encoding="utf-8") as f:
+        json.dump(history, f, indent=2, ensure_ascii=False)
+
+    return competition
+
+
+def load_competitions(filepath="competitions.json"):
+    """Load competition history."""
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    full_path = os.path.join(base_dir, filepath)
+    if os.path.exists(full_path):
+        with open(full_path, "r", encoding="utf-8") as f:
+            return json.load(f)
+    return []
+
+
+def get_player_wins(filepath="competitions.json"):
+    """Get a dict of player_name -> number of wins across all competitions."""
+    history = load_competitions(filepath)
+    wins = {}
+    for comp in history:
+        winner = comp.get("winner", "")
+        if winner:
+            wins[winner] = wins.get(winner, 0) + 1
+    return wins
+
+
+def get_player_competition_stats(filepath="competitions.json"):
+    """Get cumulative competition stats per player."""
+    history = load_competitions(filepath)
+    stats = {}
+    for comp in history:
+        for p in comp.get("players", []):
+            name = p["name"]
+            if name not in stats:
+                stats[name] = {
+                    "name": name,
+                    "games_played": 0,
+                    "total_correct": 0,
+                    "total_questions": 0,
+                    "total_stars": 0,
+                    "wins": 0,
+                    "best_streak_ever": 0,
+                }
+            s = stats[name]
+            s["games_played"] += 1
+            s["total_correct"] += p.get("correct", 0)
+            s["total_questions"] += p.get("total_questions", 0)
+            s["total_stars"] += p.get("stars", 0)
+            s["best_streak_ever"] = max(s["best_streak_ever"], p.get("best_streak", 0))
+        winner = comp.get("winner", "")
+        if winner and winner in stats:
+            stats[winner]["wins"] += 1
+    return stats

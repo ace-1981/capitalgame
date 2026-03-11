@@ -3,3 +3,4 @@ __pycache__/
 _img_cache/
 *.pyc
 progress.json
+competitions.json

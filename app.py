@@ -12,6 +12,9 @@ from stats_manager import (
     save_progress,
     load_progress,
     get_leaderboard,
+    save_competition,
+    load_competitions,
+    get_player_competition_stats,
 )
 from ui_components import (
     inject_custom_css,
@@ -80,6 +83,7 @@ def _new_question():
     ss.hint_level = 0
     ss.wrong_attempts = 0
     ss.celebrate = False
+    ss.typo_note = False
     ss.form_counter += 1
 
 
@@ -151,6 +155,40 @@ def welcome_page():
                 st.session_state.game_state = "multi_setup"
                 st.rerun()
 
+    # ── Competition history ──
+    competitions = load_competitions()
+    if competitions:
+        st.write("")
+        st.markdown("### 🏆 היסטוריית תחרויות")
+
+        # Overall leaderboard
+        comp_stats = get_player_competition_stats()
+        if comp_stats:
+            sorted_players = sorted(comp_stats.values(), key=lambda p: p["wins"], reverse=True)
+            st.markdown("#### 👑 טבלת אלופים")
+            for i, p in enumerate(sorted_players):
+                medal = ["🥇", "🥈", "🥉"][i] if i < 3 else "▪️"
+                avg_rate = round(p["total_correct"] / p["total_questions"] * 100, 1) if p["total_questions"] > 0 else 0
+                st.markdown(
+                    f"{medal} **{p['name']}** — "
+                    f"🏆 {p['wins']} ניצחונות | "
+                    f"🎮 {p['games_played']} משחקים | "
+                    f"⭐ {p['total_stars']} כוכבים | "
+                    f"📈 {avg_rate}% הצלחה | "
+                    f"🔥 שיא רצף: {p['best_streak_ever']}"
+                )
+
+        # Recent competitions
+        with st.expander(f"📜 תחרויות אחרונות ({len(competitions)} סה\"כ)"):
+            for comp in reversed(competitions[-10:]):
+                date_str = comp["date"][:10]
+                players_str = ", ".join(p["name"] for p in comp["players"])
+                st.markdown(
+                    f"**{date_str}** | {comp.get('mode_label', comp['mode'])} | "
+                    f"שחקנים: {players_str} | "
+                    f"🏆 מנצח: **{comp['winner']}**"
+                )
+
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Single-player setup & play
@@ -195,11 +233,10 @@ def single_play_page():
     # ── Two-card layout ─────────────────────────────────────────────────
     card_left, card_right = st.columns([3, 2])
 
-    # LEFT: blue info card + world map
+    # LEFT: info card + world map
     with card_left:
         render_info_card(country)
-        with st.expander("🌍 איפה בעולם?", expanded=True):
-            render_country_map(country)
+        render_country_map(country)
 
     # RIGHT: answer card
     with card_right:
@@ -224,11 +261,13 @@ def single_play_page():
                 give_up = c2.form_submit_button("🏳️ ויתור", use_container_width=True)
 
             if submitted and answer:
-                if check_answer(answer, country["capital"], _get_alternatives(country)):
+                result = check_answer(answer, country["capital"], _get_alternatives(country))
+                if result:
                     update_stats_correct(stats)
                     save_progress(stats)
                     ss.turn_state = "correct"
                     ss.celebrate = True
+                    ss.typo_note = (result == "typo")
                     st.rerun()
                 else:
                     update_stats_wrong(stats)
@@ -353,6 +392,11 @@ def multi_play_page():
     if ss.game_mode == MODE_TIMED:
         remaining = ss.time_limit - (time.time() - ss.start_time)
         if remaining <= 0:
+            save_progress(ss.multi_stats)
+            leaderboard = get_leaderboard(ss.multi_stats, ss.game_mode)
+            winner_name = leaderboard[0]["name"] if leaderboard else ""
+            mode_label = GAME_MODES.get(ss.game_mode, ss.game_mode)
+            save_competition(ss.multi_stats, ss.game_mode, mode_label, winner_name)
             ss.game_state = "results"
             st.rerun()
 
@@ -367,8 +411,7 @@ def multi_play_page():
 
     with card_left:
         render_info_card(country)
-        with st.expander("🌍 איפה בעולם?", expanded=True):
-            render_country_map(country)
+        render_country_map(country)
 
     with card_right:
         if ss.turn_state in ("guessing", "wrong"):
@@ -392,10 +435,12 @@ def multi_play_page():
                 give_up = c2.form_submit_button("🏳️ ויתור", use_container_width=True)
 
             if submitted and answer:
-                if check_answer(answer, country["capital"], _get_alternatives(country)):
+                result = check_answer(answer, country["capital"], _get_alternatives(country))
+                if result:
                     update_stats_correct(stats)
                     ss.turn_state = "correct"
                     ss.celebrate = True
+                    ss.typo_note = (result == "typo")
                     st.rerun()
                 else:
                     update_stats_wrong(stats)
@@ -433,6 +478,11 @@ def _advance_multi_turn():
     if _check_game_over():
         # Save all player stats
         save_progress(ss.multi_stats)
+        # Save competition history
+        leaderboard = get_leaderboard(ss.multi_stats, ss.game_mode)
+        winner_name = leaderboard[0]["name"] if leaderboard else ""
+        mode_label = GAME_MODES.get(ss.game_mode, ss.game_mode)
+        save_competition(ss.multi_stats, ss.game_mode, mode_label, winner_name)
         ss.game_state = "results"
     else:
         _new_question()
