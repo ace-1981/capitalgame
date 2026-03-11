@@ -193,7 +193,7 @@ def single_play_page():
                          color="#6366f1", icon="🧒")
 
     # ── Two-card layout ─────────────────────────────────────────────────
-    card_left, card_right = st.columns([3, 2], gap="large")
+    card_left, card_right = st.columns([3, 2])
 
     # LEFT: blue info card + world map
     with card_left:
@@ -363,7 +363,7 @@ def multi_play_page():
                          color=color, icon="🎮")
 
     # ── Two-card layout ─────────────────────────────────────────────────
-    card_left, card_right = st.columns([3, 2], gap="large")
+    card_left, card_right = st.columns([3, 2])
 
     with card_left:
         render_info_card(country)

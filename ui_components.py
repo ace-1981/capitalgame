@@ -180,6 +180,16 @@ def inject_custom_css():
     /* reduce general block gaps */
     [data-testid="stVerticalBlock"] > div { margin-top: -4px; }
     [data-testid="column"] [data-testid="stVerticalBlock"] > div:first-child { margin-top: 0; }
+
+    /* make text input & form buttons bigger */
+    .stTextInput > div > div > input {
+        padding: 16px 20px !important;
+        font-size: 20px !important;
+    }
+    [data-testid="stFormSubmitButton"] > button {
+        padding: 12px 24px !important;
+        font-size: 18px !important;
+    }
     </style>""", unsafe_allow_html=True)
 
 
@@ -352,8 +362,8 @@ __MRK__
 
 def render_country_map(country):
     code = country.get("country_code", "")
-    html = _leaflet_html(code, country["country_lat"], country["country_lng"], height=250)
-    components.html(html, height=260)
+    html = _leaflet_html(code, country["country_lat"], country["country_lng"], height=340)
+    components.html(html, height=350)
 
 
 def render_maps(country):
@@ -487,17 +497,18 @@ def render_scoreboard(multi_stats, current_player_name=None, mode="most_correct"
 def render_answer_prompt_html(country_name_he):
     st.markdown(
         f"""<div style="background:linear-gradient(135deg,#ffffff,#f8fafc);
-            border-radius:24px;padding:28px 24px 18px;text-align:center;
+            border-radius:24px;padding:34px 24px 28px;text-align:center;
             box-shadow:0 8px 32px rgba(99,102,241,.08), 0 2px 8px rgba(0,0,0,.04);
-            border:2px solid #e0e7ff;position:relative;overflow:hidden">
+            border:2px solid #e0e7ff;position:relative;overflow:hidden;
+            min-height:180px;display:flex;flex-direction:column;align-items:center;justify-content:center">
             <div style="position:absolute;top:0;left:0;right:0;height:5px;
                 background:linear-gradient(90deg,#6366f1,#a78bfa,#ec4899)"></div>
-            <div style="font-size:56px;line-height:1;margin-bottom:8px;opacity:.15">❓</div>
-            <div style="font-size:24px;font-weight:900;
+            <div style="font-size:56px;line-height:1;margin-bottom:10px;opacity:.15">❓</div>
+            <div style="font-size:26px;font-weight:900;
                 background:linear-gradient(135deg,#312e81,#4f46e5);
                 -webkit-background-clip:text;-webkit-text-fill-color:transparent;
-                margin-bottom:6px">מהי עיר הבירה?</div>
-            <div style="font-size:16px;color:#64748b;font-weight:500">
+                margin-bottom:8px">מהי עיר הבירה?</div>
+            <div style="font-size:18px;color:#64748b;font-weight:500">
                 מהי עיר הבירה של <b style="color:#1e293b">{country_name_he}</b>?</div>
         </div>""", unsafe_allow_html=True)
 
